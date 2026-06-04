@@ -1,1 +1,15 @@
--r backend/requirements.txt
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+SQLAlchemy
+psycopg2-binary
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+pandas
+numpy
+scikit-learn
+sentence-transformers
+joblib
+alembic
