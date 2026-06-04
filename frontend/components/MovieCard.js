@@ -124,7 +124,7 @@ export default function MovieCard({ movie, variant = 'grid' }) {
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -3, scale: 1.01 }}
         transition={{ duration: 0.3 }}
-        className="bg-gradient-to-r from-olive-950/70 via-olive-900/40 to-olive-950/70 backdrop-blur-md rounded-2xl p-4 mb-3 border border-white/5 hover:border-olive-400/20 shadow-lg hover:shadow-xl transition-all duration-300 group"
+        className="glass-card bg-gradient-to-r from-olive-950/50 via-olive-900/30 to-olive-950/50 backdrop-blur-md rounded-2xl p-4 mb-3 border border-white/5 hover:border-olive-400/20 shadow-lg hover:shadow-xl transition-all duration-300 group"
       >
         <div className="flex gap-4 items-center">
           {/* Stylized Thumbnail Poster */}
@@ -199,7 +199,7 @@ export default function MovieCard({ movie, variant = 'grid' }) {
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ y: -6 }}
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="movie-card group"
+      className="movie-card glass-card group"
     >
       {/* High-Fidelity Custom Animated Poster Canvas */}
       <div className={`w-full h-full relative overflow-hidden bg-gradient-to-br ${poster.gradient} flex flex-col justify-between p-4 z-0`}>

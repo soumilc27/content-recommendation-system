@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiSearch, FiArrowRight, FiZap } from 'react-icons/fi'
+import { FiSearch, FiArrowRight, FiZap, FiSmile, FiFrown, FiCoffee, FiCompass, FiFilm, FiActivity } from 'react-icons/fi'
 import Link from 'next/link'
 import { API_BASE } from '../lib/config'
 import MovieCard from '../components/MovieCard'
@@ -8,7 +8,7 @@ import MovieCard from '../components/MovieCard'
 const moodOptions = [
   {
     value: 'happy',
-    emoji: '😊',
+    icon: FiSmile,
     title: 'Happy',
     tagline: 'Warm, uplifting stories',
     gradient: 'from-amber-400 via-orange-500 to-rose-500',
@@ -18,7 +18,7 @@ const moodOptions = [
   },
   {
     value: 'sad',
-    emoji: '😢',
+    icon: FiFrown,
     title: 'Sad',
     tagline: 'Reflective & emotional',
     gradient: 'from-sky-500 via-blue-600 to-indigo-700',
@@ -28,7 +28,7 @@ const moodOptions = [
   },
   {
     value: 'excited',
-    emoji: '🎬',
+    icon: FiZap,
     title: 'Excited',
     tagline: 'High energy & thrills',
     gradient: 'from-rose-500 via-red-600 to-fuchsia-600',
@@ -38,7 +38,7 @@ const moodOptions = [
   },
   {
     value: 'relaxed',
-    emoji: '😌',
+    icon: FiCoffee,
     title: 'Relaxed',
     tagline: 'Calm, cozy viewing',
     gradient: 'from-emerald-400 via-teal-500 to-cyan-600',
@@ -48,7 +48,7 @@ const moodOptions = [
   },
   {
     value: 'curious',
-    emoji: '🔍',
+    icon: FiCompass,
     title: 'Curious',
     tagline: 'Odd, clever discoveries',
     gradient: 'from-violet-500 via-purple-600 to-fuchsia-600',
@@ -181,11 +181,11 @@ export default function Home() {
                   />
 
                   <span
-                    className={`relative text-3xl md:text-4xl transition-transform duration-300 ${
-                      isActive ? 'scale-110' : 'group-hover:scale-105'
+                    className={`relative p-2.5 rounded-xl bg-white/10 text-2xl md:text-3xl transition-all duration-300 ${
+                      isActive ? 'scale-110 text-white bg-white/20' : 'text-olive-200 group-hover:scale-105 group-hover:text-white'
                     }`}
                   >
-                    {mood.emoji}
+                    <mood.icon />
                   </span>
 
                   <div className="relative mt-4 w-full">
@@ -249,8 +249,8 @@ export default function Home() {
                 className={`mb-6 overflow-hidden rounded-2xl border border-olive-700/80 bg-olive-900/50 p-5 md:p-6`}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${activeMood.gradient} text-lg`}>
-                    {activeMood.emoji}
+                  <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${activeMood.gradient} text-white`}>
+                    <activeMood.icon size={18} />
                   </span>
                   <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-olive-400">AI mood read</p>
@@ -278,33 +278,46 @@ export default function Home() {
 
       {/* New Features Section - With Movie DNA Link */}
       <div className="movie-row py-12">
-        <h2 className="movie-row-title mb-8">Why CineMind?</h2>
+        <h2 className="movie-row-title mb-8 font-bold text-white text-center md:text-left">Why CineMind?</h2>
         <div className="grid md:grid-cols-3 gap-6">
           {[
-            { title: 'Smart Recommendations', desc: 'AI-powered suggestions based on your mood and preferences' },
-            { title: 'Vast Library', desc: 'Browse thousands of movies with detailed information' },
-            { title: 'Your Movie DNA', desc: 'Visualize your taste profile with interactive charts', link: '/dashboard/taste-profile' },
-          ].map((feature, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="bg-olive-900 border border-olive-800 rounded-lg p-6 hover:border-olive-600 transition-all group cursor-pointer"
-            >
-              {feature.link ? (
-                <Link href={feature.link}>
-                  <h3 className="text-xl font-bold text-olive-300 mb-3 group-hover:text-olive-200">{feature.title}</h3>
-                  <p className="text-olive-200">{feature.desc}</p>
-                </Link>
-              ) : (
-                <>
-                  <h3 className="text-xl font-bold text-olive-300 mb-3">{feature.title}</h3>
-                  <p className="text-olive-200">{feature.desc}</p>
-                </>
-              )}
-            </motion.div>
-          ))}
+            { title: 'Smart Recommendations', desc: 'AI-powered suggestions based on your mood and preferences', icon: FiZap },
+            { title: 'Vast Library', desc: 'Browse thousands of movies with detailed information', icon: FiFilm },
+            { title: 'Your Movie DNA', desc: 'Visualize your taste profile with interactive charts', link: '/dashboard/taste-profile', icon: FiActivity },
+          ].map((feature, i) => {
+            const FeatureIcon = feature.icon
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className="glass-card border border-white/5 p-6 hover:border-olive-400/30 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
+              >
+                {feature.link ? (
+                  <Link href={feature.link}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2.5 rounded-xl bg-olive-500/10 text-olive-400 group-hover:bg-olive-500/25 group-hover:text-olive-300 transition-colors">
+                        <FeatureIcon size={20} />
+                      </div>
+                      <h3 className="text-xl font-bold text-white group-hover:text-olive-300 transition-colors">{feature.title}</h3>
+                    </div>
+                    <p className="text-olive-200 text-sm leading-relaxed">{feature.desc}</p>
+                  </Link>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2.5 rounded-xl bg-olive-500/10 text-olive-400 group-hover:bg-olive-500/25 group-hover:text-olive-300 transition-colors">
+                        <FeatureIcon size={20} />
+                      </div>
+                      <h3 className="text-xl font-bold text-white">{feature.title}</h3>
+                    </div>
+                    <p className="text-olive-200 text-sm leading-relaxed">{feature.desc}</p>
+                  </>
+                )}
+              </motion.div>
+            )
+          })}
         </div>
       </div>
     </div>

@@ -28,11 +28,12 @@ class Settings:
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
+    db_url = os.getenv('DATABASE_URL')
+    if db_url and db_url.startswith('postgres://'):
+        db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
     return Settings(
-        database_url=os.getenv(
-            'DATABASE_URL',
-            f'sqlite:///{(BACKEND_ROOT / "dev.db").as_posix()}',
-        ),
+        database_url=db_url or f'sqlite:///{(BACKEND_ROOT / "dev.db").as_posix()}',
         secret_key=os.getenv('SECRET_KEY', 'dev-secret-change-in-production'),
         admin_api_key=os.getenv('ADMIN_API_KEY'),
         xai_api_key=os.getenv('XAI_API_KEY') or os.getenv('GROK_API_KEY'),
