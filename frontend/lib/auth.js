@@ -6,6 +6,14 @@ export function getToken() {
   }
 }
 
+export function clearToken() {
+  try {
+    localStorage.removeItem('cm_token')
+  } catch (e) {
+    // ignore storage errors
+  }
+}
+
 export function authFetch(url, options={}){
   const token = getToken()
   const headers = options.headers || {}

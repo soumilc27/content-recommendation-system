@@ -88,15 +88,18 @@ function getPosterStyles(title) {
 
 const renderGenres = (genres) => {
   if (!genres) return <span className="text-olive-300">No genres</span>;
-  return genres
-    .split(/[|,-]+/)
+  const raw = String(genres).trim();
+  const parts = raw.includes('|') ? raw.split('|') : raw.split(/\s+/);
+  return parts
+    .map((g) => g.trim())
+    .filter(Boolean)
     .slice(0, 3)
     .map((g, i) => (
       <span
         key={i}
         className="text-[9px] tracking-wide text-olive-300 bg-olive-950/50 px-2 py-0.5 rounded-full border border-olive-800/40 capitalize font-medium"
       >
-        {g.trim().toLowerCase()}
+        {g.toLowerCase()}
       </span>
     ));
 };

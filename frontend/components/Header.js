@@ -14,6 +14,7 @@ export default function Header(){
     { href: '/', label: 'Home' },
     { href: '/search', label: 'Search' },
     { href: '/recommend', label: 'Recommend' },
+    { href: '/dashboard/taste-profile', label: 'Movie DNA' },
     { href: '/wishlist', label: 'Wishlist' },
   ]
 
@@ -63,11 +64,6 @@ export default function Header(){
           <div className="hidden md:flex items-center gap-3">
             {logged ? (
               <div className="flex items-center gap-3">
-                <Link href="/wishlist">
-                  <motion.button whileHover={{ scale: 1.05 }} className="btn btn-outline text-sm">
-                    Wishlist
-                  </motion.button>
-                </Link>
                 <Link href="/profile">
                   <motion.button whileHover={{ scale: 1.05 }} className="btn btn-primary text-sm">
                     Profile
@@ -108,12 +104,6 @@ export default function Header(){
             ))}
             {logged ? (
               <>
-                <Link href="/wishlist">
-                  <motion.span className="text-olive-200 hover:text-white block px-4 py-2 rounded transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}>
-                    Wishlist
-                  </motion.span>
-                </Link>
                 <Link href="/profile">
                   <motion.span className="text-olive-200 hover:text-white block px-4 py-2 rounded transition-colors"
                     onClick={() => setMobileMenuOpen(false)}>

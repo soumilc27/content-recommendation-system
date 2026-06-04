@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { FiBookmark, FiCalendar, FiClock, FiLogIn, FiMail, FiTrash2, FiUser, FiSearch, FiArrowRight } from 'react-icons/fi'
+import { FiBookmark, FiCalendar, FiClock, FiLogIn, FiLogOut, FiMail, FiTrash2, FiUser, FiSearch, FiArrowRight } from 'react-icons/fi'
 import { API_BASE } from '../lib/config'
-import { authFetch, getToken } from '../lib/auth'
+import { authFetch, clearToken, getToken } from '../lib/auth'
+import { enrichWatchlistItems, formatGenreLabel, parseGenres } from '../lib/watchlist'
 
 function formatDate(value) {
   if (!value) return 'Not available'
@@ -18,11 +19,7 @@ function formatDate(value) {
 }
 
 function getGenreList(movie) {
-  if (!movie?.genres) return []
-  return movie.genres
-    .split('|')
-    .map((genre) => genre.trim())
-    .filter(Boolean)
+  return parseGenres(movie?.genres)
 }
 
 function WishlistCard({ item, onRemove }) {
@@ -116,26 +113,23 @@ export default function AccountDashboard({ view = 'profile' }) {
   const stats = useMemo(() => {
     const genreCounts = {}
     watchlist.forEach((item) => {
-      if (item.movie && item.movie.genres) {
-        item.movie.genres.split(/[|,-]+/).forEach((g) => {
-          const name = g.trim().toLowerCase()
-          if (name) {
-            genreCounts[name] = (genreCounts[name] || 0) + 1
-          }
-        })
-      }
+      parseGenres(item.movie?.genres).forEach((genre) => {
+        const key = genre.toLowerCase()
+        genreCounts[key] = (genreCounts[key] || 0) + 1
+      })
     })
 
+    const savedCount = watchlist.length
+    const minGenreCount = savedCount > 0 ? Math.ceil(savedCount * 0.5) : 0
     const topGenres = Object.entries(genreCounts)
+      .filter(([, count]) => count >= minGenreCount)
       .sort((a, b) => b[1] - a[1])
-      .map((entry) => entry[0])
-      .slice(0, 3)
+      .map(([genre]) => genre)
 
     return {
       saved: watchlist.length,
       active: profile?.is_active ? 'Active' : 'Inactive',
-      topGenres: topGenres.length > 0 ? topGenres : [],
-      // No genres yet placeholder handled in render
+      topGenres,
     }
   }, [profile, watchlist])
 
@@ -143,12 +137,9 @@ export default function AccountDashboard({ view = 'profile' }) {
   const availableGenres = useMemo(() => {
     const genres = new Set()
     watchlist.forEach((item) => {
-      if (item.movie && item.movie.genres) {
-        item.movie.genres.split(/[|,-]+/).forEach((g) => {
-          const name = g.trim().toLowerCase()
-          if (name) genres.add(name)
-        })
-      }
+      parseGenres(item.movie?.genres).forEach((genre) => {
+        genres.add(genre.toLowerCase())
+      })
     })
     return Array.from(genres).sort()
   }, [watchlist])
@@ -160,7 +151,7 @@ export default function AccountDashboard({ view = 'profile' }) {
       const description = (item.movie?.description || '').toLowerCase()
       const matchesSearch = title.includes(searchQuery.toLowerCase()) || description.includes(searchQuery.toLowerCase())
 
-      const movieGenres = item.movie?.genres ? item.movie.genres.toLowerCase() : ''
+      const movieGenres = parseGenres(item.movie?.genres).map((g) => g.toLowerCase())
       const matchesGenre = !selectedGenre || movieGenres.includes(selectedGenre.toLowerCase())
 
       return matchesSearch && matchesGenre
@@ -188,9 +179,12 @@ export default function AccountDashboard({ view = 'profile' }) {
 
         const profileData = await profileRes.json()
         const watchlistData = watchlistRes.ok ? await watchlistRes.json() : []
+        const enrichedWatchlist = await enrichWatchlistItems(
+          Array.isArray(watchlistData) ? watchlistData : [],
+        )
 
         setProfile(profileData)
-        setWatchlist(Array.isArray(watchlistData) ? watchlistData : [])
+        setWatchlist(enrichedWatchlist)
 
         const insightsRes = await authFetch(`${API_BASE}/users/me/watchlist/insights`)
         if (insightsRes.ok) {
@@ -209,6 +203,23 @@ export default function AccountDashboard({ view = 'profile' }) {
     load()
   }, [])
 
+  async function refreshInsights(nextWatchlist) {
+    if (!nextWatchlist.length) {
+      setAiSummary('')
+      return
+    }
+
+    try {
+      const insightsRes = await authFetch(`${API_BASE}/users/me/watchlist/insights`)
+      if (insightsRes.ok) {
+        const insightsData = await insightsRes.json()
+        setAiSummary(insightsData.ai_summary || '')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   async function handleRemove(watchlistId) {
     if (!confirm('Remove this movie from your wishlist?')) return
 
@@ -221,11 +232,18 @@ export default function AccountDashboard({ view = 'profile' }) {
         throw new Error('Failed to remove item')
       }
 
-      setWatchlist((current) => current.filter((item) => item.id !== watchlistId))
+      const nextWatchlist = watchlist.filter((item) => item.id !== watchlistId)
+      setWatchlist(nextWatchlist)
+      await refreshInsights(nextWatchlist)
     } catch (err) {
       console.error(err)
       alert('Could not remove the movie from your wishlist.')
     }
+  }
+
+  function handleLogout() {
+    clearToken()
+    router.push('/login')
   }
 
   if (loading) {
@@ -323,7 +341,9 @@ export default function AccountDashboard({ view = 'profile' }) {
               </span>
             </div>
             <p className="text-olive-200 leading-7 font-light">
-              {aiSummary || 'Save a few movies first and I will generate a taste profile.'}
+              {aiSummary || (watchlist.length > 0
+                ? 'Building your taste insight from your saved movies...'
+                : 'Save a movie to your wishlist to generate a taste profile.')}
             </p>
           </section>
 
@@ -340,13 +360,17 @@ export default function AccountDashboard({ view = 'profile' }) {
                   stats.topGenres.map((g) => (
                     <span
                       key={g}
-                      className="rounded-full bg-olive-950 border border-olive-800 px-3 py-1 text-xs text-olive-300 capitalize font-medium"
+                      className="rounded-full bg-olive-950 border border-olive-800 px-3 py-1 text-xs text-olive-300 font-medium"
                     >
-                      {g}
+                      {formatGenreLabel(g)}
                     </span>
                   ))
                 ) : (
-                  <span className="text-olive-300">No genres yet</span>
+                  <span className="text-olive-300">
+                    {watchlist.length > 0
+                      ? 'No genre appears in at least half of your saved titles yet'
+                      : 'Save movies to see top genres'}
+                  </span>
                 )}
 
               </div>
@@ -364,6 +388,13 @@ export default function AccountDashboard({ view = 'profile' }) {
                     Get recommendations
                   </span>
                 </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-2 rounded-full border border-red-700/70 bg-red-950/40 px-4 py-2 text-xs font-semibold text-red-200 transition-colors hover:border-red-500 hover:text-white"
+                >
+                  <FiLogOut size={14} /> Log out
+                </button>
               </div>
             </div>
           </section>
@@ -491,4 +522,4 @@ export default function AccountDashboard({ view = 'profile' }) {
       </div>
     </main>
   )
-}
+}

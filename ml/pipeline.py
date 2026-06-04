@@ -111,6 +111,84 @@ class ContentModel:
                 break
         return recommended
 
+    def recommend_from_titles(
+        self,
+        titles: List[str],
+        k: int = 10,
+        exclude_movie_ids: Optional[List[int]] = None,
+        mood: Optional[str] = None,
+    ) -> List[Dict]:
+        """Aggregate similar picks across multiple seed titles (e.g. a wishlist)."""
+        if self.sim_matrix is None or not titles:
+            return []
+
+        seed_indices: List[int] = []
+        exclude_indices = set()
+
+        for title in titles:
+            idx = self._find_title_index(title)
+            if idx is None:
+                continue
+            seed_indices.append(idx)
+            exclude_indices.add(idx)
+
+        if 'movie_id' in self.df.columns and exclude_movie_ids:
+            for movie_id in exclude_movie_ids:
+                try:
+                    matches = self.df[self.df['movie_id'] == int(movie_id)]
+                    for idx in matches.index.tolist():
+                        exclude_indices.add(int(idx))
+                except Exception:
+                    continue
+
+        if not seed_indices:
+            return []
+
+        n = len(self.sim_matrix)
+        agg = np.zeros(n, dtype=float)
+        for idx in seed_indices:
+            scores = self.sim_matrix[idx]
+            if getattr(self, 'collab_sim', None) is not None:
+                collab_scores = self.collab_sim[idx]
+                scores = 0.6 * scores + 0.4 * collab_scores
+            agg += scores
+        agg /= len(seed_indices)
+
+        for idx in exclude_indices:
+            if 0 <= idx < n:
+                agg[idx] = -1.0
+
+        sim_scores = sorted(enumerate(agg), key=lambda x: x[1], reverse=True)
+        recommended: List[Dict] = []
+        best_seed = seed_indices[0]
+
+        for i, score in sim_scores:
+            if i in exclude_indices or score < 0:
+                continue
+            for seed_idx in seed_indices:
+                if self.sim_matrix[seed_idx][i] >= self.sim_matrix[best_seed][i]:
+                    best_seed = seed_idx
+                    break
+            title_i = self.df.loc[i, 'title']
+            explanation = self._explain(best_seed, i, mood)
+            if len(seed_indices) > 1:
+                explanation = f"Wishlist match; {explanation}"
+            item = {
+                'title': title_i,
+                'score': float(score),
+                'explanation': explanation,
+            }
+            if 'movie_id' in self.df.columns:
+                try:
+                    item['movie_id'] = int(self.df.loc[i, 'movie_id'])
+                except Exception:
+                    item['movie_id'] = None
+            recommended.append(item)
+            if len(recommended) >= k:
+                break
+
+        return recommended
+
     def recommend_topk(self, k: int = 10, mood: Optional[str] = None) -> List[Dict]:
         # fallback popular by genres matching mood
         if self.df is None:
