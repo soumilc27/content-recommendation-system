@@ -113,7 +113,7 @@ def generate_text(prompt: str) -> str:
     # Priority 1: Ollama Cloud API (if OLLAMA_API_KEY is defined)
     if settings.ollama_api_key:
         endpoint = f"{settings.ollama_base_url.rstrip('/')}/chat/completions"
-        return _generate_text_cached(
+        generated = _generate_text_cached(
             settings.ollama_model,
             settings.ollama_api_key,
             endpoint,
@@ -121,6 +121,8 @@ def generate_text(prompt: str) -> str:
             prompt,
             1000,
         )
+        if generated:
+            return generated
 
     # Priority 2: x.ai (fallback)
     if settings.xai_api_key:
@@ -166,7 +168,7 @@ def summarize_movie_detail(title: str, genres: str | None, recommendations: Iter
 
 
 def _build_plot_fallback(title: str, genres: str | None, description: str | None) -> str:
-    genre_list = [genre.strip() for genre in str(genres or '').split() if genre.strip()]
+    genre_list = _parse_genre_labels(genres)
     display_title = title.strip().title() if title else 'This Movie'
     genre_phrase = ', '.join(genre_list[:4]).title() if genre_list else 'Broad Appeal'
 
@@ -175,12 +177,13 @@ def _build_plot_fallback(title: str, genres: str | None, description: str | None
         if clean_description:
             return clean_description if clean_description.endswith('.') else f'{clean_description}.'
 
-    opening = f'{display_title} is a {genre_phrase.lower()} film.' if genre_list else f'{display_title} is a film with broad appeal.'
+    article = 'an' if genre_phrase[:1].lower() in {'a', 'e', 'i', 'o', 'u'} else 'a'
+    opening = f'{display_title} is {article} {genre_phrase.lower()} film.' if genre_list else f'{display_title} is a film with broad appeal.'
     middle = (
         'No plot synopsis is stored for this title yet, but the genre mix suggests a story built around '
         'family-friendly stakes, recognizable characters, and an accessible tone.'
     )
-    closing = 'Gemini can replace this with a richer plot paragraph once a valid API key is configured.'
+    closing = 'A configured AI provider can replace this with a richer plot paragraph.'
     return f'{opening} {middle} {closing}'
 
 
@@ -195,7 +198,8 @@ def summarize_movie_plot(title: str, genres: str | None, description: str | None
         f'Genres: {genres or "Unknown"}',
         f'Description: {description or "Unavailable"}',
     ])
-    return generate_text(prompt)
+    generated = generate_text(prompt)
+    return generated or _build_plot_fallback(title, genres, description)
 
 
 def _parse_genre_labels(genres: str | None) -> list[str]:

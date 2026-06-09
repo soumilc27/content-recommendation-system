@@ -3,11 +3,13 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Ensure project root is on sys.path so `ml` package can be imported when
-# starting the backend from the `backend` folder.
+# Ensure both the backend package and project root are importable whether the
+# server is started from the repo root or from the `backend` folder.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+BACKEND_ROOT = PROJECT_ROOT / "backend"
+for import_root in (PROJECT_ROOT, BACKEND_ROOT):
+    if str(import_root) not in sys.path:
+        sys.path.insert(0, str(import_root))
 
 from app.api.v1 import recommend, persona, admin, auth, users, search, movies, visualizations
 

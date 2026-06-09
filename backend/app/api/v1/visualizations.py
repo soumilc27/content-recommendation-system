@@ -1,34 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-import os
 import numpy as np
 import pandas as pd
 
 from app.services.gemini import summarize_recommendations
+from app.services.ml_loader import get_ml_model
 
 router = APIRouter()
-
-# Lazy load ML model
-ML_MODEL = None
-
-def get_ml_model():
-    global ML_MODEL
-    if ML_MODEL is None:
-        try:
-            from ml.pipeline import ContentModel
-        except Exception as e:
-            raise RuntimeError(f"Failed to import ML pipeline: {e}")
-        current_file = os.path.abspath(__file__)
-        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_file)))))
-        csv_path = os.path.join(repo_root, 'movielens_100k.csv')
-        if not os.path.exists(csv_path):
-            raise FileNotFoundError(f"MovieLens CSV not found at {csv_path}")
-        model = ContentModel(csv_path)
-        model.build()
-        ML_MODEL = model
-    return ML_MODEL
-
 
 @router.get("/movie/{movie_id}/dna")
 def get_movie_dna(movie_id: int):
