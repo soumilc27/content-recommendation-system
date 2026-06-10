@@ -103,7 +103,9 @@ body {
 
 /* Custom premium badge and noise/grid overlay */
 .glass-badge {
-  @apply backdrop-blur-md bg-black/45 border border-white/10 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-olive-200 flex items-center gap-1.5 shadow-lg;
+  @apply backdrop-blur-md border border-white/10 px-2.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1.5 shadow-lg;
+
+  background-color: rgba(0, 0, 0, 0.45);
 }
 
 .grain-overlay {
