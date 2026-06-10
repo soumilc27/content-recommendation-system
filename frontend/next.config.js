@@ -4,7 +4,7 @@ const backendUrl = (process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_U
   .replace(/\/$/, '')
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  process.env.BACKEND_API_URL ||;
+  process.env.BACKEND_API_URL;
 
 fetch(`${API_URL}/api/v1/your-endpoint`);
 const nextConfig = {
